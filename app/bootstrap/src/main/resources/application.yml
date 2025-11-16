@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: llm-hub
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.aidoai.llm.hub: DEBUG
+
