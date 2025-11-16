@@ -10,5 +10,5 @@ server:
 logging:
   level:
     root: INFO
-    com.aidoai.llm.hub: DEBUG
+    com.aidoai.llmhub: DEBUG
 

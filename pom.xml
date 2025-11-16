@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.aidoai.llm</groupId>
+    <groupId>com.aidoai.llmhub</groupId>
     <artifactId>llm-hub</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -55,57 +55,57 @@
             
             <!-- Internal modules -->
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-bootstrap</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-biz-web</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-biz-service-impl</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-biz-shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-core-service</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-core-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-common-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-common-service-facade</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-common-service-integration</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-common-dal</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.aidoai.llm</groupId>
+                <groupId>com.aidoai.llmhub</groupId>
                 <artifactId>llm-hub-test</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -154,7 +154,7 @@
                         </execution>
                     </executions>
                     <configuration>
-                        <mainClass>com.aidoai.llm.hub.Application</mainClass>
+                        <mainClass>com.aidoai.llmhub.Application</mainClass>
                     </configuration>
                 </plugin>
             </plugins>

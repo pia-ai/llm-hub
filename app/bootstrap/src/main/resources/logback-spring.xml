@@ -55,7 +55,7 @@
     </root>
 
     <!-- Application business logger configuration -->
-    <logger name="com.aidoai.llm.hub" level="INFO" additivity="false">
+    <logger name="com.aidoai.llmhub" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="APP_FILE" />
     </logger>

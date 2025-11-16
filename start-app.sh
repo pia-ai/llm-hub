@@ -7,7 +7,7 @@
 APP_NAME="llm-hub-bootstrap"
 APP_VERSION="1.0.0-SNAPSHOT"
 JAR_NAME="${APP_NAME}-${APP_VERSION}.jar"
-MAIN_CLASS="com.aidoai.llm.hub.Application"
+MAIN_CLASS="com.aidoai.llmhub.Application"
 
 # Path configuration
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"

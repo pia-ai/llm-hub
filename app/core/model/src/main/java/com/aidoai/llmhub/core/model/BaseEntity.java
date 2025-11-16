@@ -1,4 +1,4 @@
-package com.aidoai.llm.hub.core.model;
+package com.aidoai.llmhub.core.model;
 
 import lombok.Data;
 import java.io.Serializable;

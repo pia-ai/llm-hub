@@ -1,4 +1,4 @@
-package com.aidoai.llm.hub.core.service;
+package com.aidoai.llmhub.core.service;
 
 /**
  * Base service interface
