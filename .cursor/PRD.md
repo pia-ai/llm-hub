@@ -2,8 +2,9 @@
 
 ## 1. 文档信息
 
-- **文档版本**: v1.0
+- **文档版本**: v1.1
 - **创建日期**: 2025-11-16
+- **最后更新**: 2025-11-16
 - **产品名称**: LLM Hub
 - **版本**: MVP (v0.1)
 - **产品负责人**: [待填写]
@@ -55,6 +56,7 @@ LLM Hub 是一个统一的大语言模型访问与管理平台，通过单一标
 | 认证鉴权 | P0 | ✓ | ✓ | 中 |
 | 用量统计 | P0 | ✓ | ✓ | 中 |
 | Web 控制台（基础） | P0 | ✓ | ✓ | 高 |
+| 多模态支持 | P0 | ✓ | ✓ | 高 |
 | 智能路由 | P1 | - | ✓ | 高 |
 | 多租户管理 | P1 | - | ✓ | 高 |
 | 成本控制 | P1 | - | ✓ | 中 |
@@ -160,15 +162,91 @@ data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1699000000
 data: [DONE]
 ```
 
+**多模态请求 (Vision)**
+
+```http
+POST /v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer {API_KEY}
+
+{
+  "model": "gpt-4-vision-preview",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What's in this image?"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://example.com/image.jpg",
+            "detail": "high"
+          }
+        }
+      ]
+    }
+  ],
+  "max_tokens": 1000
+}
+```
+
+**多模态响应**
+
+```json
+{
+  "id": "chatcmpl-123456",
+  "object": "chat.completion",
+  "created": 1699000000,
+  "model": "gpt-4-vision-preview",
+  "provider": "openai",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The image shows a beautiful sunset over the ocean with vibrant orange and pink colors in the sky."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 285,
+    "completion_tokens": 20,
+    "total_tokens": 305,
+    "image_tokens": 265
+  },
+  "cost": {
+    "input_cost": 0.00855,
+    "output_cost": 0.0006,
+    "total_cost": 0.00915,
+    "currency": "USD"
+  }
+}
+```
+
+**图像输入格式支持**
+
+- URL 方式：`https://` 或 `http://` 开头的图片链接
+- Base64 方式：`data:image/jpeg;base64,{base64_string}`
+- 支持的图片格式：JPEG, PNG, GIF, WebP
+- 图片大小限制：最大 20MB
+- 分辨率限制：最大 4096x4096
+
 #### 4.1.4 支持的模型列表 (MVP)
 
-| 提供商 | 模型 ID | 用途 | 优先级 |
-|--------|---------|------|--------|
-| OpenAI | gpt-4, gpt-4-turbo | 高质量对话 | P0 |
-| OpenAI | gpt-3.5-turbo | 经济型对话 | P0 |
-| Anthropic | claude-3-opus | 高质量对话 | P0 |
-| Anthropic | claude-3-sonnet | 平衡型对话 | P0 |
-| Google | gemini-pro | 多模态能力 | P1 |
+| 提供商 | 模型 ID | 用途 | 多模态支持 | 优先级 |
+|--------|---------|------|-----------|--------|
+| OpenAI | gpt-4, gpt-4-turbo | 高质量对话 | 否 | P0 |
+| OpenAI | gpt-4-vision-preview | 视觉理解 | 图像 | P0 |
+| OpenAI | gpt-3.5-turbo | 经济型对话 | 否 | P0 |
+| Anthropic | claude-3-opus | 高质量对话 | 图像 | P0 |
+| Anthropic | claude-3-sonnet | 平衡型对话 | 图像 | P0 |
+| Anthropic | claude-3-haiku | 快速响应 | 图像 | P0 |
+| Google | gemini-pro | 高质量对话 | 否 | P1 |
+| Google | gemini-pro-vision | 多模态理解 | 图像+视频 | P1 |
 
 #### 4.1.5 请求参数说明
 
@@ -218,6 +296,10 @@ data: [DONE]
 - [ ] 正确处理并返回所有错误场景
 - [ ] 所有响应包含成本信息
 - [ ] 流式响应支持 SSE 格式
+- [ ] 支持图像 URL 和 Base64 两种输入方式
+- [ ] 正确处理图像大小和格式验证
+- [ ] 多模态请求的 token 计算准确（包括 image_tokens）
+- [ ] 支持多张图片的批量处理
 
 ### 4.2 模型管理
 
@@ -251,7 +333,10 @@ Authorization: Bearer {API_KEY}
         "completion": true,
         "embedding": false,
         "vision": false,
-        "function_calling": true
+        "function_calling": true,
+        "image_input": false,
+        "video_input": false,
+        "audio_input": false
       },
       "pricing": {
         "input": 0.03,
@@ -569,6 +654,190 @@ Authorization: Bearer {USER_TOKEN}
 - [ ] 错误提示友好且可操作
 - [ ] 支持深色模式
 
+### 4.6 多模态支持
+
+#### 4.6.1 功能描述
+
+提供统一的多模态输入接口，支持图像、音频、视频等多种模态数据的处理，让用户能够通过一个 API 接口实现跨模态的智能交互。
+
+#### 4.6.2 用户故事
+
+```
+作为一个开发者
+我想要在对话中发送图片、音频或视频
+这样我就可以构建更丰富的 AI 应用场景
+```
+
+#### 4.6.3 支持的模态类型
+
+**4.6.3.1 图像输入 (Image Input)**
+
+功能：
+- 图片理解和分析
+- OCR 文字识别
+- 物体检测和识别
+- 场景描述
+- 图表数据提取
+
+支持的模型：
+- OpenAI: gpt-4-vision-preview
+- Anthropic: claude-3-opus, claude-3-sonnet, claude-3-haiku
+- Google: gemini-pro-vision
+
+**4.6.3.2 视频输入 (Video Input) - V1.0**
+
+功能：
+- 视频内容理解
+- 关键帧提取和分析
+- 视频摘要生成
+- 动作识别
+
+支持的模型：
+- Google: gemini-pro-vision
+
+**4.6.3.3 音频输入 (Audio Input) - V1.0**
+
+功能：
+- 语音转文字 (STT)
+- 音频内容理解
+- 情感分析
+
+支持的模型：
+- OpenAI: whisper-1
+
+#### 4.6.4 API 规格扩展
+
+**文件上传接口**
+
+```http
+POST /v1/files
+Content-Type: multipart/form-data
+Authorization: Bearer {API_KEY}
+
+file: [binary data]
+purpose: "vision" | "audio" | "video"
+```
+
+响应：
+
+```json
+{
+  "id": "file-abc123",
+  "object": "file",
+  "bytes": 1024000,
+  "created_at": 1699000000,
+  "filename": "image.jpg",
+  "purpose": "vision",
+  "status": "uploaded",
+  "url": "https://cdn.llmhub.com/files/file-abc123",
+  "expires_at": 1699086400
+}
+```
+
+**使用上传的文件**
+
+```http
+POST /v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer {API_KEY}
+
+{
+  "model": "gpt-4-vision-preview",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What's in this image?"
+        },
+        {
+          "type": "image_file",
+          "image_file": {
+            "file_id": "file-abc123"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+**视频输入示例 (V1.0)**
+
+```http
+POST /v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer {API_KEY}
+
+{
+  "model": "gemini-pro-vision",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Summarize what happens in this video"
+        },
+        {
+          "type": "video_url",
+          "video_url": {
+            "url": "https://example.com/video.mp4"
+          }
+        }
+      ]
+    }
+  ],
+  "max_tokens": 2000
+}
+```
+
+#### 4.6.5 多模态内容限制
+
+| 模态类型 | 格式支持 | 大小限制 | 时长限制 | 分辨率限制 |
+|---------|---------|---------|---------|-----------|
+| 图像 | JPEG, PNG, GIF, WebP | 20MB | - | 4096x4096 |
+| 视频 | MP4, MOV, AVI | 100MB | 10 分钟 | 1920x1080 |
+| 音频 | MP3, WAV, M4A | 25MB | 30 分钟 | - |
+
+#### 4.6.6 成本计算
+
+多模态请求的成本计算包含以下部分：
+
+- **文本 Token**: 按标准价格计算
+- **图像 Token**: 根据图像分辨率计算
+  - 低分辨率 (512x512以下): 85 tokens
+  - 高分辨率: 按 512x512 切块，每块 170 tokens
+- **视频 Token**: 按帧数计算，通常为关键帧提取
+- **音频 Token**: 按时长计算，约 1 分钟 = 200 tokens
+
+#### 4.6.7 错误处理
+
+新增错误码：
+
+| HTTP 状态码 | 错误码 | 说明 |
+|------------|--------|------|
+| 400 | invalid_image_format | 不支持的图像格式 |
+| 400 | image_too_large | 图像文件过大 |
+| 400 | invalid_image_url | 无法访问的图像 URL |
+| 400 | video_too_long | 视频时长超限 |
+| 400 | unsupported_modality | 模型不支持该模态 |
+| 413 | file_too_large | 文件大小超过限制 |
+
+#### 4.6.8 验收标准
+
+- [ ] 支持 URL 和 Base64 两种图像输入方式
+- [ ] 支持文件上传接口
+- [ ] 正确处理多种图像格式 (JPEG/PNG/GIF/WebP)
+- [ ] 图像大小和分辨率验证
+- [ ] 多模态 Token 计算准确
+- [ ] 单次请求支持多张图片 (最多 10 张)
+- [ ] 文件临时存储和自动清理 (24 小时过期)
+- [ ] CDN 加速文件访问
+- [ ] 详细的错误提示和处理
+- [ ] Web 控制台支持多模态测试
+
 ## 5. 数据模型设计
 
 ### 5.1 核心实体
@@ -688,6 +957,52 @@ CREATE TABLE usage_daily (
   UNIQUE KEY uk_user_date_model (user_id, date, model),
   INDEX idx_user_date (user_id, date),
   INDEX idx_date (date)
+);
+```
+
+#### 5.1.6 文件存储 (File Storage)
+
+```sql
+CREATE TABLE file_storage (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  file_id VARCHAR(64) UNIQUE NOT NULL,
+  user_id BIGINT NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  content_type VARCHAR(100) NOT NULL,
+  file_size BIGINT NOT NULL,
+  purpose ENUM('vision', 'audio', 'video', 'document') NOT NULL,
+  storage_path VARCHAR(512) NOT NULL,
+  cdn_url VARCHAR(512),
+  status ENUM('uploading', 'uploaded', 'processing', 'ready', 'expired', 'deleted') DEFAULT 'uploading',
+  metadata JSON,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user (user_id),
+  INDEX idx_file_id (file_id),
+  INDEX idx_status (status),
+  INDEX idx_expires (expires_at),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+#### 5.1.7 请求内容 (Request Content) - 可选
+
+```sql
+CREATE TABLE request_contents (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  request_id VARCHAR(64) NOT NULL,
+  content_type ENUM('text', 'image', 'video', 'audio') NOT NULL,
+  content_data JSON NOT NULL,
+  file_id VARCHAR(64),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_request (request_id),
+  INDEX idx_file (file_id),
+  FOREIGN KEY (request_id) REFERENCES request_logs(request_id)
+) PARTITION BY RANGE (UNIX_TIMESTAMP(created_at)) (
+  PARTITION p202511 VALUES LESS THAN (UNIX_TIMESTAMP('2025-12-01')),
+  PARTITION p202512 VALUES LESS THAN (UNIX_TIMESTAMP('2026-01-01')),
+  PARTITION p_future VALUES LESS THAN MAXVALUE
 );
 ```
 
@@ -881,6 +1196,105 @@ public interface LLMProvider {
 - 基于权限的功能访问控制
 - IP 白名单（可选）
 
+### 6.6 文件存储和处理
+
+#### 6.6.1 文件存储方案
+
+**存储架构**：
+- 本地存储：开发环境使用
+- 对象存储：生产环境使用 AWS S3/阿里云 OSS/腾讯云 COS
+- CDN 加速：文件访问通过 CDN 分发
+
+**存储策略**：
+- 临时文件：24 小时自动过期
+- 用户文件：按用户隔离存储
+- 分桶存储：按文件类型和日期分桶
+- 生命周期管理：自动清理过期文件
+
+#### 6.6.2 文件处理流程
+
+```java
+public interface FileProcessor {
+    
+    /**
+     * Upload file
+     */
+    Mono<FileMetadata> uploadFile(
+        FilePart filePart,
+        String purpose,
+        Long userId
+    );
+    
+    /**
+     * Process image (resize, compress, format conversion)
+     */
+    Mono<ProcessedImage> processImage(
+        String fileId,
+        ImageProcessOptions options
+    );
+    
+    /**
+     * Extract video frames
+     */
+    Flux<VideoFrame> extractVideoFrames(
+        String fileId,
+        int frameCount
+    );
+    
+    /**
+     * Transcribe audio
+     */
+    Mono<AudioTranscription> transcribeAudio(
+        String fileId
+    );
+    
+    /**
+     * Delete expired files
+     */
+    Mono<Void> cleanupExpiredFiles();
+}
+```
+
+#### 6.6.3 图像处理
+
+使用 ImageMagick 或 Java ImageIO：
+
+- **格式转换**: 统一转换为 JPEG/PNG
+- **尺寸调整**: 超大图片自动缩放到 4096x4096
+- **压缩优化**: 保持质量的前提下减小文件大小
+- **元数据提取**: EXIF 信息提取
+
+#### 6.6.4 视频处理 (V1.0)
+
+使用 FFmpeg：
+
+- **关键帧提取**: 自动提取关键帧
+- **格式转换**: 统一转换为 MP4 格式
+- **时长检查**: 验证视频时长
+- **缩略图生成**: 生成视频预览图
+
+#### 6.6.5 音频处理 (V1.0)
+
+使用 FFmpeg：
+
+- **格式转换**: 统一转换为 MP3/WAV
+- **时长检查**: 验证音频时长
+- **比特率调整**: 优化音频质量
+
+#### 6.6.6 CDN 配置
+
+- 回源配置：CDN 回源到对象存储
+- 缓存策略：静态文件缓存 7 天
+- 访问控制：签名 URL，防止盗链
+- HTTPS 支持：强制 HTTPS 访问
+
+#### 6.6.7 安全要求
+
+- 文件类型验证：检查文件 MIME 类型和魔数
+- 病毒扫描：上传文件进行安全扫描
+- 访问控制：文件访问需要鉴权
+- 签名 URL：临时访问链接，限时有效
+
 ## 7. 非功能需求
 
 ### 7.1 性能要求
@@ -892,6 +1306,9 @@ public interface LLMProvider {
 | 并发连接数 | > 5000 | 压力测试 |
 | 数据库查询延迟 (P95) | < 50ms | Prometheus |
 | 缓存命中率 | > 80% | Redis Monitor |
+| 文件上传延迟 (P95) | < 2s (10MB) | Prometheus |
+| 图像处理延迟 (P95) | < 1s | Prometheus |
+| CDN 命中率 | > 90% | CDN Monitor |
 
 ### 7.2 可用性要求
 
@@ -937,6 +1354,8 @@ public interface LLMProvider {
 - 完整的用户流程测试
 - 真实 LLM 提供商调用测试（使用测试账号）
 - 流式响应测试
+- 多模态请求端到端测试
+- 文件上传和处理流程测试
 
 ### 8.4 性能测试
 
@@ -960,9 +1379,10 @@ public interface LLMProvider {
 |--------|------|----------|
 | M1: 核心 API | Week 1-4 | Chat Completion API + 模型管理 |
 | M2: 认证鉴权 | Week 5-6 | API Key 管理 + 权限控制 |
-| M3: 用量统计 | Week 7-8 | 用量记录 + 统计查询 |
-| M4: Web 控制台 | Week 9-11 | 基础管理界面 |
-| M5: 测试和优化 | Week 12 | 完整测试 + 性能优化 |
+| M3: 多模态支持 | Week 7-9 | 图像输入 + 文件上传 + 处理 |
+| M4: 用量统计 | Week 10-11 | 用量记录 + 统计查询 |
+| M5: Web 控制台 | Week 12-14 | 基础管理界面 + 多模态测试 |
+| M6: 测试和优化 | Week 15 | 完整测试 + 性能优化 |
 
 ### 9.2 发布检查清单
 
@@ -996,6 +1416,10 @@ public interface LLMProvider {
 - [ ] 所有 MVP 核心功能正常工作
 - [ ] API 兼容 OpenAI SDK
 - [ ] 支持至少 3 个 LLM 提供商
+- [ ] 支持至少 3 个多模态模型
+- [ ] 文件上传功能正常工作
+- [ ] 图像输入（URL 和 Base64）正常工作
+- [ ] 多模态 Token 计算准确
 - [ ] Web 控制台所有页面可访问
 
 ### 10.2 性能验收
@@ -1029,6 +1453,9 @@ public interface LLMProvider {
 | 响应式编程学习曲线 | 中 | 团队培训，代码审查 |
 | 性能达不到预期 | 中 | 提前进行压力测试 |
 | 数据库性能瓶颈 | 中 | 使用 Redis 缓存 |
+| 文件存储成本超预期 | 中 | 实施文件生命周期管理，自动清理 |
+| 图像处理性能瓶颈 | 中 | 使用异步处理，引入消息队列 |
+| 多模态 API 兼容性问题 | 中 | 充分测试各提供商差异，做好适配 |
 
 ### 11.2 外部依赖
 
@@ -1038,11 +1465,16 @@ public interface LLMProvider {
 | Anthropic API | Anthropic | 低 | OpenAI |
 | MySQL 数据库 | 自建 | 低 | PostgreSQL |
 | Redis 缓存 | 自建 | 低 | Memcached |
+| 对象存储 | AWS S3/阿里云 OSS | 低 | 本地存储/其他云存储 |
+| CDN 服务 | CloudFlare/阿里云 CDN | 低 | 直连对象存储 |
+| FFmpeg | 开源 | 低 | 云端视频处理服务 |
 
 ### 11.3 进度风险
 
 - 响应式编程实现复杂度超预期：预留 2 周 buffer
 - 多提供商适配工作量大：并行开发，优先 P0 提供商
+- 多模态功能开发复杂度高：分阶段实现，MVP 先支持图像
+- 文件存储和处理技术栈不熟悉：提前技术预研和 POC
 - 前端开发进度落后：考虑使用现成模板
 
 ## 12. 术语表
@@ -1062,6 +1494,14 @@ public interface LLMProvider {
 | Quota | 配额，限制使用量 |
 | WebFlux | Spring 的响应式 Web 框架 |
 | R2DBC | 响应式关系型数据库连接 |
+| Multimodal | 多模态，支持多种输入形式（文本、图像、音频、视频） |
+| Vision | 视觉能力，模型可以理解和分析图像 |
+| OCR | Optical Character Recognition，光学字符识别 |
+| Base64 | 一种编码方式，用于在文本中嵌入二进制数据 |
+| CDN | Content Delivery Network，内容分发网络 |
+| Object Storage | 对象存储，用于存储大量非结构化数据 |
+| FFmpeg | 开源的音视频处理工具 |
+| Image Token | 图像 Token，用于计算图像处理的成本 |
 
 ## 13. 附录
 
@@ -1078,6 +1518,7 @@ public interface LLMProvider {
 | 版本 | 日期 | 变更内容 | 作者 |
 |------|------|----------|------|
 | v1.0 | 2025-11-16 | 初始版本 | - |
+| v1.1 | 2025-11-16 | 增加多模态支持（图像、视频、音频输入） | - |
 
 ---
 
